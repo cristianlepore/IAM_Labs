@@ -57,6 +57,33 @@ services:
       - enterprise-network
 
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3
+
+    container_name: keycloak
+
+    restart: unless-stopped
+
+    command: start-dev
+
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ChangeMeNow!
+
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: adminadminadmin
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      - postgres
+
+    networks:
+      - enterprise-network
+
 networks:
   enterprise-network:
     external: true
