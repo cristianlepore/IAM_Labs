@@ -41,6 +41,7 @@ services:
       - enterprise-network
 
 
+
   portainer:
     image: portainer/portainer-ce:lts
     container_name: portainer
