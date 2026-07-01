@@ -1,2 +1,3 @@
 infrastructure/data/
 .env
+provisioning/.env
