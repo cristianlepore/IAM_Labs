@@ -1,8 +1,18 @@
 # IAM Labs
 
-> A laboratory project demonstrating the design and implementation of a modern **Identity and Access Management (IAM)** architecture based on **Keycloak**, **OpenID Connect (OIDC)** and a custom **user provisioning engine**.
+> A laboratory project demonstrating the progressive design and implementation of modern Identity and Access Management (IAM) architectures using Active Directory, Keycloak, LDAP, OpenID Connect and enterprise identity federation.
 
 This project is intentionally built in iterations. Each architecture introduces new business requirements and new IAM concepts, allowing learners to evolve from basic authentication to enterprise identity management.
+
+---
+
+## Project Vision
+
+IAM Labs demonstrates the progressive evolution of an enterprise Identity and Access Management infrastructure.
+
+Rather than focusing on a single product, the project shows how organizations evolve from local authentication to centralized identity, enterprise directories, identity federation, automated provisioning and complete IAM ecosystems.
+
+Each architecture introduces one additional enterprise concept while preserving the previous implementations.
 
 ---
 
@@ -13,7 +23,7 @@ This project is intentionally built in iterations. Each architecture introduces 
 ![Keycloak](https://img.shields.io/badge/Keycloak-26.x-red)
 ![Gitea](https://img.shields.io/badge/Gitea-1.24-green)
 ![OIDC](https://img.shields.io/badge/OpenID%20Connect-OIDC-orange)
-![Status](https://img.shields.io/badge/Architecture-v1-success)
+![Status](https://img.shields.io/badge/Architecture-v2-success)
 
 </p>
 
@@ -69,28 +79,37 @@ flowchart LR
     A --> B --> C --> D --> E
 ```
 
-The current implementation covers **Architecture 1**, introducing centralized authentication with Keycloak, Single Sign-On (SSO) using OpenID Connect, and automated user provisioning for Gitea.
+The laboratory currently implements **Architecture 2**.
 
-Future iterations will extend the architecture by integrating additional enterprise services while preserving the same design principles.
+The project has evolved from a simple centralized authentication solution into a complete enterprise identity infrastructure.
+
+Active Directory has become the organization's **Source of Truth**, while Keycloak acts as a federated Identity Provider through LDAP. Enterprise applications authenticate users using OpenID Connect, providing centralized authentication and Single Sign-On without maintaining local credentials.
+
+Future architectures will introduce automated provisioning, authorization management and support for additional enterprise applications.
 
 ---
 
 # Learning Objectives
 
-IAM Labs has been designed to progressively introduce the core concepts of Identity and Access Management.
+IAM Labs has been designed to progressively introduce the core concepts of modern Identity and Access Management.
 
 By completing the laboratory, learners will gain practical experience with:
 
+- Active Directory Domain Services
+- LDAP
 - Identity Providers
 - OpenID Connect
+- OAuth 2.0
 - Single Sign-On
+- Identity Federation
+- Enterprise Directories
 - User Provisioning
-- Role-Based Access Control
+- Group Synchronization
 - REST APIs
 - Docker-based deployments
 - Modular IAM architectures
 
-Each iteration builds upon the previous one, reflecting the way IAM infrastructures evolve in real organizations.
+Each architectural iteration introduces new enterprise technologies while preserving the knowledge acquired in previous stages.
 
 ---
 
@@ -209,18 +228,81 @@ This separation reflects a common enterprise IAM architecture where authenticati
 
 ---
 
-# Benefits
+# Architecture 2 — Enterprise Directory
 
-Compared to Architecture 0, the new solution provides:
+## Business Scenario
 
-- Centralized authentication
+As ACME continues to grow, managing user identities directly inside the Identity Provider is no longer sustainable.
+
+The company introduces Microsoft Active Directory as the corporate directory, making it the single source of truth for employee identities, passwords and organizational groups.
+
+Keycloak is transformed into a federated Identity Provider by integrating with Active Directory through LDAP.
+
+Enterprise applications continue to authenticate users using OpenID Connect.
+
+---
+
+## Business Requirements
+
+The new architecture must provide:
+
+- Enterprise directory services
+- Centralized identity management
+- LDAP federation
 - Single Sign-On
-- Automated provisioning
-- Centralized user lifecycle
-- Reduced administrative effort
+- Centralized password management
+- Group synchronization
+- Scalability for future enterprise services
+
+---
+
+## Architecture Overview
+
+```mermaid
+flowchart LR
+
+    User((Employee))
+
+    AD["Active Directory"]
+
+    KC["Keycloak"]
+
+    GT["Gitea"]
+
+    User --> GT
+
+    GT -->|"OIDC"| KC
+
+    KC -->|"LDAP"| AD
+```
+
+---
+
+## Separation of Responsibilities
+
+| Responsibility | Component |
+|----------------|-----------|
+| Identity Store | Active Directory |
+| Password Management | Active Directory |
+| Identity Provider | Keycloak |
+| Authentication | Keycloak |
+| Authorization | Gitea |
+| Repository Management | Gitea |
+
+---
+
+## Benefits
+
+Compared to Architecture 1, the new solution provides:
+
+- Enterprise directory services
+- LDAP federation
+- Active Directory as Source of Truth
+- Centralized password management
+- Enterprise group management
+- Simplified identity lifecycle
 - Better scalability
-- Separation of concerns
-- Extensible architecture
+- Enterprise-ready authentication
 
 ---
 
@@ -261,15 +343,17 @@ The project intentionally separates infrastructure, documentation and provisioni
 
 # Technology Stack
 
-| Component | Technology |
-|------------|------------|
-| Identity Provider | Keycloak |
-| Authentication | OpenID Connect |
-| Git Platform | Gitea |
-| Database | PostgreSQL |
-| Containers | Docker Compose |
-| Provisioning | Python |
-| API Integration | REST |
+| Component            | Technology       |
+| -------------------- | ---------------- |
+| Enterprise Directory | Active Directory |
+| Identity Provider    | Keycloak         |
+| Authentication       | OpenID Connect   |
+| Federation           | LDAP             |
+| Git Platform         | Gitea            |
+| Database             | PostgreSQL       |
+| Containers           | Docker Compose   |
+| Provisioning         | Python           |
+| API Integration      | REST             |
 
 ---
 # Quick Start
@@ -307,38 +391,22 @@ The expected containers are:
 
 # High-Level Architecture
 
-The implemented solution separates authentication, provisioning and application responsibilities.
-
 ```mermaid
 flowchart LR
 
-    User((User))
+    User((Employee))
 
-    subgraph Identity
+    AD["Active Directory"]
 
-        KC["Keycloak"]
+    KC["Keycloak"]
 
-    end
-
-    subgraph Provisioning
-
-        PE["Provisioning Engine"]
-
-    end
-
-    subgraph Applications
-
-        GT["Gitea"]
-
-    end
+    GT["Gitea"]
 
     User --> GT
 
     GT -->|"OIDC"| KC
 
-    KC -->|"REST Admin API"| PE
-
-    PE -->|"REST API"| GT
+    KC -->|"LDAP Federation"| AD
 ```
 
 ---
@@ -354,27 +422,29 @@ Instead, Gitea delegates authentication to Keycloak.
 ```mermaid
 sequenceDiagram
 
-    actor User
+actor User
 
-    participant Gitea
+participant Gitea
 
-    participant Keycloak
+participant Keycloak
 
-    User->>Gitea: Access Gitea
+participant ActiveDirectory
 
-    Gitea->>Keycloak: Redirect (OIDC)
+User->>Gitea: Access
 
-    Keycloak->>User: Login
+Gitea->>Keycloak: OIDC Redirect
 
-    User->>Keycloak: Credentials
+Keycloak->>User: Login Form
 
-    Keycloak-->>Gitea: Authorization Code
+User->>Keycloak: Username + Password
 
-    Gitea->>Keycloak: Token Request
+Keycloak->>ActiveDirectory: LDAP Bind
 
-    Keycloak-->>Gitea: ID Token
+ActiveDirectory-->>Keycloak: Authentication Result
 
-    Gitea-->>User: Authenticated Session
+Keycloak-->>Gitea: ID Token
+
+Gitea-->>User: Authenticated Session
 ```
 
 Authentication is therefore centralized inside the Identity Provider.
@@ -534,13 +604,15 @@ python sync_users.py --apply
 The current implementation includes:
 
 - ✅ Docker-based infrastructure
-- ✅ Centralized Identity Provider
+- ✅ Active Directory Domain Services
+- ✅ LDAP Federation
+- ✅ Keycloak Identity Provider
 - ✅ OpenID Connect authentication
 - ✅ Single Sign-On
-- ✅ Automated user provisioning
-- ✅ Role-based provisioning
-- ✅ Modular provisioning engine
-- ✅ REST API integration
+- ✅ Active Directory as Source of Truth
+- ✅ Group synchronization
+- ✅ Gitea integration
+- ✅ Enterprise authentication architecture
 
 ---
 
@@ -563,18 +635,32 @@ Additional technical documentation is available in the `docs/` directory.
 
 # Roadmap
 
-The current implementation represents **Architecture 1**.
+The current implementation represents **Architecture 2**.
 
 Future developments include:
 
-- User update operations
-- User disable operations
-- Team provisioning
-- SCIM integration
-- Scheduled synchronization
-- Generic connectors for additional applications
+## Architecture 3
 
-The architecture has been intentionally designed to support future integrations without redesigning the provisioning engine.
+- Automated provisioning
+- SCIM integration
+- Automatic team assignment
+- Group-based authorization
+
+## Architecture 4
+
+- Multiple enterprise applications
+- Jenkins integration
+- Nextcloud integration
+- GitLab integration
+- Complete enterprise IAM ecosystem
+
+## Future Topics
+
+- Kerberos
+- Microsoft Entra ID
+- Okta
+- Multi-Factor Authentication
+- Identity Governance
 
 ---
 

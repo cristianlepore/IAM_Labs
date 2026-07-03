@@ -59,7 +59,7 @@ services:
 
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.3
+    image: quay.io/keycloak/keycloak:26.2.5
 
     container_name: keycloak
 
@@ -75,6 +75,7 @@ services:
 
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: adminadminadmin
+      KC_LOG_LEVEL: INFO,org.keycloak.storage.ldap:TRACE
 
     ports:
       - "8080:8080"
